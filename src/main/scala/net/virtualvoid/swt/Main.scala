@@ -44,15 +44,7 @@ object Main {
 	type ItemCreator[T] = ItemParent => T => TreeItem
 	def item[T](label: T => String = (_: T).toString): ItemCreator[T] =
 		parent => o => createTreeItem(parent) ~! (_.setText(label(o)))
-	/*
-	def item[T, U](label: T => String = (_: T).toString
-			                             ,children: ItemParent => T => List[TreeItem] = (_: ItemParent) => (_: T) => Nil)
-		: ItemCreator[T] = { parent => o =>
-		(createTreeItem(parent)   
-			~! (_.setText(label(o))) 
-			~! (children(_)(o)))
-	}
-	 */
+
 	val childrenGenerator = ItemStorage[(TreeItem, () => Unit)]("children")
 	def parent[T, U](creator: ItemCreator[T])(children: T => Iterable[U])(childCreator: => ItemCreator[U]): ItemCreator[T] =
 		parent => o => {
