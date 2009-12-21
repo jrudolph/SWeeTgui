@@ -1,7 +1,7 @@
 package net.virtualvoid.swt
 
 import Trees._
-import Tools._
+import _root_.net.virtualvoid.scala.Tools._
 import _root_.org.eclipse.swt
 import swt.SWT
 import swt.layout.FillLayout

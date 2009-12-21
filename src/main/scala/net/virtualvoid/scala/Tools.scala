@@ -1,4 +1,4 @@
-package net.virtualvoid.swt
+package net.virtualvoid.scala
 
 object Tools {
 	trait Do[T] {

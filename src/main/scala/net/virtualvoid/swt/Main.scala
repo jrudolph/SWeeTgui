@@ -1,7 +1,7 @@
 package net.virtualvoid.swt
 
 import Trees._
-import Tools._
+import _root_.net.virtualvoid.scala.Tools._
 
 object Main extends TreeApp[AnyRef] {
 	
@@ -24,5 +24,4 @@ object Main extends TreeApp[AnyRef] {
 			 	 		.|--(bm => bm.method.invoke(bm.o))(treeCreator)
 			 	 }
 }
-
 

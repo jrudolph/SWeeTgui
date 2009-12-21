@@ -1,6 +1,6 @@
 package net.virtualvoid.swt
 
-import Tools._
+import _root_.net.virtualvoid.scala.Tools._
 import SWTTools._
 
 import _root_.org.eclipse.swt
