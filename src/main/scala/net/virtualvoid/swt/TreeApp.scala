@@ -10,10 +10,12 @@ import swt.widgets.{ Shell, Tree }
 trait TreeApp[T] {
 	def treeCreator: ItemCreator[T]
 	def startObject: T
+	def title: String = "Generic TreeApp"
 	
 	def run {
 		val shell = new Shell
 		shell.setLayout(new FillLayout)
+		shell.setText(title)
 		val tree = new Tree(shell, SWT.NONE)
 		Trees.register(tree)
 
