@@ -7,7 +7,12 @@ import _root_.net.virtualvoid.swt.SWTTools._
 object IOTools {
 	import _root_.java.io._
 	
-	def hexdumpd(data: Array[Byte]): String = new String(pipeThrough("hexdump -C", data))
+	def hexdumpd(data: Array[Byte]): String = 
+		try {
+			new String(pipeThrough("hexdump -C", data))
+		} catch {
+			case e:IOException => "You must have 'hexdump' installed and in the path. Error: "+e.getMessage
+		}
 	
 	def pipeThrough(cmd: String, data: Array[Byte]): Array[Byte] = {
 		val baos = new ByteArrayOutputStream
