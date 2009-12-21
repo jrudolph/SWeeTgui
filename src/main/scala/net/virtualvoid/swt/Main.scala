@@ -49,9 +49,10 @@ object Main {
 	def ItemInfo[T](f: (ItemParent, T) => List[TreeItem]): ItemInfo[T] = new ItemInfo[T] {
 		def create(it: ItemParent, obj: T): List[TreeItem] = f(it,obj)
 	}
-	trait ItemInfo[T] {
+	trait ItemCreator[-T] {
 		def create(it: ItemParent, obj: T): List[TreeItem]
-		
+	}
+	trait ItemInfo[T] extends ItemCreator[T] {
 		def sub(f: T => TreeItem => Unit): ItemInfo[T] = ItemInfo[T] { (parent, obj) => 
 			val items = ItemInfo.this.create(parent, obj)
 			items foreach f(obj)
@@ -65,8 +66,9 @@ object Main {
 				descender(obj) foreach (x => child.create(it, x))
 			}
 		}
-		def |--(i: ItemInfo[T]): ItemInfo[T] = |--(x => x)(i)
-		def |--[U](descender: T => U)(i: ItemInfo[U]): ItemInfo[T] = sub { obj => it => registerGenerator(it)(i.create(it, descender(obj))) }
+		def |-!(label: T => String): ItemInfo[T] = |--(item[T] labelled label)
+		def |--(i: => ItemCreator[T]): ItemInfo[T] = |--(x => x)(i)
+		def |--[U](descender: T => U)(i: => ItemCreator[U]): ItemInfo[T] = sub { obj => it => registerGenerator(it)(i.create(it, descender(obj))) }
 		
 	}
 	def item[T]: ItemInfo[T] = ItemInfo[T] { (parent, obj) =>
@@ -92,9 +94,9 @@ object Main {
 				}
 		})
 		
-		lazy val objInfo: ItemInfo[AnyRef] = 
+		def objInfo: ItemInfo[AnyRef] = 
 			item[AnyRef].labelled(_.toString)
-						 .|--("Test")
+						 .|--(_.getClass)(item[Class[_]].labelled("Class: "+_).|--(objInfo))
 						 .|-*(fieldsOf _) { info =>
 					 		info.labelled(_.field.getName)
 					 			.|--(bf => bf.field.get(bf.o))(objInfo)
