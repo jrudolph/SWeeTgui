@@ -77,8 +77,9 @@ object PdfBrowser extends net.virtualvoid.swt.TreeApp[PdfReader] {
 	def stream: ItemCreator[PRStream] =
 		item[PRStream].|-!("Length: "+_.getRawLength)
 					   .|--(dictionary labelled "Dictionary")
-					   .dblClick(x => textBox(IOTools.hexdumpd(PdfReader.getStreamBytes(x))))
-					   
+					   .contextMenu("Plaintext")(x => textBox(new String(PdfReader.getStreamBytes(x))))
+					   .contextMenu("Hexdump")(x => textBox(IOTools.hexdumpd(PdfReader.getStreamBytes(x))))
+					   .contextMenu("Hexdump (raw)")(x => textBox(IOTools.hexdumpd(PdfReader.getStreamBytesRaw(x))))
 	
 	def array: ItemCreator[PdfArray] =
 		item[PdfArray].|-*(arrayEntries(_).zipWithIndex) { info =>
@@ -105,7 +106,7 @@ object PdfBrowser extends net.virtualvoid.swt.TreeApp[PdfReader] {
 	
 	def treeCreator: ItemCreator[PdfReader] = 
 		item[PdfReader].labelled(_.toString)
-		               .|--(_.getCatalog)(dictionary labelled "Catalog")
+		               .|--(_.getCatalog)(dictionary labelled "Root")
 	
 	def main(args: Array[String]) { run }
 }
