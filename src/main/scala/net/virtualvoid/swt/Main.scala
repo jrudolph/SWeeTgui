@@ -39,48 +39,45 @@ object Main {
 	}
 	val childrenGenerator = ItemStorage[(TreeItem, () => Unit)]("children")
 	
-	/*
-	def children[T <: AnyRef, U <: AnyRef](f: T => List[U])(creator: ItemParent => U => TreeItem)
-		: ItemParent => T => List[TreeItem] = parent => o => f(o).map(creator(parent))
-		
-	type ItemCreator[T] = ItemParent => T => TreeItem
-	def item[T](label: T => String = (_: T).toString): ItemCreator[T] =
-		parent => o => createTreeItem(parent) ~! (_.setText(label(o)))
-	def parent[T, U](creator: ItemCreator[T])(children: T => Iterable[U])(childCreator: => ItemCreator[U]): ItemCreator[T] =
-		parent => o => {
-			val item = creator(parent)(o)
-			item(childrenGenerator) = (new TreeItem(item, SWT.NONE) ~! (_.setText("dummy")), () => children(o) foreach childCreator(item))
-			item
-		}*/
-	
-	def ItemCreator[T](func: (ItemParent, T) => TreeItem) = new ItemCreator[T]{
-		def apply(parent: ItemParent, obj: T): TreeItem = func(parent, obj)
+	def registerGenerator(it: TreeItem)(f: => Unit) {
+		it(childrenGenerator) match {
+			case Some((dummy, gen)) => it(childrenGenerator) = (dummy, { () => gen();f;() })
+			case None => it(childrenGenerator) = (new TreeItem(it, SWT.NONE) ~! (_.setText("<dummy>")), () => f)
+		}
 	}
-	trait ItemCreator[T] extends ((ItemParent, T) => TreeItem) /*with (() => List[ItemCreator[T]])*/ {
-		def apply(parent: ItemParent, obj: T): TreeItem
-		def apply(children: List[ItemCreator[T]]): ItemCreator[T] = ItemCreator[T] { (parent, obj) =>
-			ItemCreator.this(parent, obj) ~! { item =>
-				item(childrenGenerator) = (new TreeItem(item, SWT.NONE) ~! (_.setText("dummy")), () => children foreach ((_: ItemCreator[T]).apply(item, obj)))
+	
+	def ItemInfo[T](f: (ItemParent, T) => List[TreeItem]): ItemInfo[T] = new ItemInfo[T] {
+		def create(it: ItemParent, obj: T): List[TreeItem] = f(it,obj)
+	}
+	trait ItemInfo[T] {
+		def create(it: ItemParent, obj: T): List[TreeItem]
+		
+		def sub(f: T => TreeItem => Unit): ItemInfo[T] = ItemInfo[T] { (parent, obj) => 
+			val items = ItemInfo.this.create(parent, obj)
+			items foreach f(obj)
+			items
+		}
+		def labelled(label: T => String): ItemInfo[T] = sub(obj => it => it.setText(label(obj)))
+			
+		def children[U](descender: T => Iterable[U])(f: ItemInfo[U] => ItemInfo[U]): ItemInfo[T] = sub { obj => it =>
+			registerGenerator(it) {
+				val child = f(item[U])			
+				descender(obj) foreach (x => child.create(it, x))
 			}
 		}
-		def labelled(labeller: T => String): ItemCreator[T] = ItemCreator[T] { (parent, obj) =>
-			ItemCreator.this(parent, obj) ~! (_.setText(labeller(obj)))
-		}
+		def child(i: ItemInfo[T]): ItemInfo[T] = child(x => x)(i)
+		def child[U](descender: T => U)(i: ItemInfo[U]): ItemInfo[T] = sub { obj => it => registerGenerator(it)(i.create(it, descender(obj))) }
 	}
+	def item[T]: ItemInfo[T] = ItemInfo[T] { (parent, obj) =>
+		List(createTreeItem(parent))
+	}
+	implicit def str2ItemInfo[T](str: String): ItemInfo[T] = item[T] labelled(_ => str) 
 	
-	def |[T](l: ItemCreator[T]): List[ItemCreator[T]] = null
-	def |[T](l: List[ItemCreator[T]]): List[ItemCreator[T]] = null
-	def --[T]: ItemCreator[T] = null
-	def --[T](label: String): ItemCreator[T] = null
-	def **[T, U](expander: T => Iterable[U], child: ItemCreator[U]): List[ItemCreator[T]] = null
-
-	trait MoreItems[T] {
-		def |[T](l: ItemCreator[T]): List[ItemCreator[T]] = null
-		def |[T](l: List[ItemCreator[T]]): List[ItemCreator[T]] = null
-	}
-	implicit def listMayHaveMoreItem[T](l: List[ItemCreator[T]]): MoreItems[T] = null
-		
 	case class BoundField(o: AnyRef, field: java.lang.reflect.Field)
+	def fieldsOf(o: AnyRef) = o.getClass.getFields.map(BoundField(o, _))
+	case class BoundMethod0(o: AnyRef, method: java.lang.reflect.Method)
+	def methodsOf(o: AnyRef) = o.getClass.getMethods.filter(m => m.getParameterTypes.length == 0 && m.getReturnType != classOf[Void]).map(BoundMethod0(o, _))
+	
 	def main(args: Array[String]){
 		val shell = new Shell
 		shell.setLayout(new FillLayout)
@@ -94,23 +91,19 @@ object Main {
 				}
 		})
 		
-		/*def oneObject: ItemCreator[AnyRef] = 
-			parent(item[AnyRef](_.toString()))(x => x.getClass.getFields.map(f => BoundField(x, f))){
-				parent(item((_:BoundField).field.getName))(x => List(x.field.get(x.o))) {
-					oneObject
-				}
-			}*/
-		def x = { --[AnyRef] labelled ((_:AnyRef).toString) }
-		def obj: List[ItemCreator[AnyRef]] = 
-			|(--[AnyRef] labelled ((_:AnyRef).toString) apply (
-				|(--[AnyRef]("Test"))
-				|(**((x: AnyRef) => x.getClass.getFields.map(f => BoundField(x, f)),
-				  --[BoundField] labelled (_.field.getName)))
-					
-			))
+		lazy val obj: ItemInfo[AnyRef] = item[AnyRef].labelled(_.toString)
+					 //.child("Test")
+					 .children(fieldsOf _){ info =>
+					 	info.labelled(_.field.getName)
+					 		.child(bf => bf.field.get(bf.o))(obj)
+					 }
+					 .children(methodsOf _){ info =>
+					 	info.labelled(_.method.getName)
+					 		.child(bm => bm.method.invoke(bm.o))(obj)
+					 }
 		
-		//oneObject(tree)("Wurst")
-		
+		obj.create(tree, "Wurst")
+
 		shell.open
 		val display = shell.getDisplay
 		while (!shell.isDisposed) {
