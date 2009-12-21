@@ -11,7 +11,7 @@ trait TreeApp[T] {
 	def treeCreator: ItemCreator[T]
 	def startObject: T
 	
-	def main(args: Array[String]){
+	def run {
 		val shell = new Shell
 		shell.setLayout(new FillLayout)
 		val tree = new Tree(shell, SWT.NONE)

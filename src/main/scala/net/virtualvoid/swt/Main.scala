@@ -23,5 +23,7 @@ object Main extends TreeApp[AnyRef] {
 			 	 	info.labelled(_.method.getName)
 			 	 		.|--(bm => bm.method.invoke(bm.o))(treeCreator)
 			 	 }
+	
+	def main(args: Array[String]): Unit = run
 }
 
