@@ -5,7 +5,6 @@ import swt.SWT
 import swt.widgets.{Shell, Tree}
 import swt.layout.FillLayout
 import Trees._
-import Tools._
 
 object Main {
 	
