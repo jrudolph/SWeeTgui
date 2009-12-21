@@ -1,5 +1,7 @@
 /target
 /project/boot
 /project/*.log
+/project/build/target
 /bin
+/lib_managed
 /.scala_dependencies
