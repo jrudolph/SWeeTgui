@@ -15,7 +15,7 @@ trait TreeApp[T] {
 		val shell = new Shell
 		shell.setLayout(new FillLayout)
 		val tree = new Tree(shell, SWT.NONE)
-		tree.addTreeListener(TreeExpansionListener)
+		Trees.register(tree)
 
 		treeCreator.create(tree, startObject)
 

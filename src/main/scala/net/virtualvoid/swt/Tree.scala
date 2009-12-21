@@ -6,7 +6,7 @@ import SWTTools._
 import _root_.org.eclipse.swt
 import swt.SWT
 import swt.widgets.{ Tree, TreeItem }
-import swt.events.{ TreeEvent, TreeAdapter }
+import swt.events.{ TreeEvent, TreeListener, MouseEvent, MouseAdapter }
 
 object Trees {
 	type ItemParent = Either[Tree, TreeItem]
@@ -16,6 +16,7 @@ object Trees {
 		case Right(item) => new TreeItem(item, SWT.NONE)
 	}
 	val childrenGenerator = ItemStorage[(TreeItem, () => Unit)]("children")
+	val onDblClickHandler = ItemStorage[TreeItem => Unit]("dblClickHandler")
 	
 	def registerGenerator(it: TreeItem)(f: => Unit) {
 		it(childrenGenerator) match {
@@ -37,7 +38,10 @@ object Trees {
 			items
 		}
 		def labelled(label: T => String): ItemInfo[T] = sub(obj => it => it.setText(label(obj)))
-			
+		
+		def as[U](descender: T => U)(i: => ItemCreator[U]): ItemInfo[T] = ItemInfo[T] { (parent, obj) =>
+			i.create(parent, descender(obj))
+		}
 		def |-*[U](descender: T => Iterable[U])(f: ItemInfo[U] => ItemInfo[U]): ItemInfo[T] = sub { obj => it =>
 			registerGenerator(it) {
 				val child = f(item[U])			
@@ -48,18 +52,34 @@ object Trees {
 		def |--(i: => ItemCreator[T]): ItemInfo[T] = |--(x => x)(i)
 		def |--[U](descender: T => U)(i: => ItemCreator[U]): ItemInfo[T] = sub { obj => it => registerGenerator(it)(i.create(it, descender(obj))) }
 		
+		def dblClick(handler: T => Unit) = sub { obj => it => it(onDblClickHandler) = ((_: TreeItem) => handler(obj)) }
 	}
 	def item[T]: ItemInfo[T] = ItemInfo[T] { (parent, obj) =>
 		List(createTreeItem(parent))
 	}
+	def choose[T, U <: T](func: PartialFunction[T,ItemCreator[U]]): ItemInfo[T] = ItemInfo[T] { (parent, obj) =>
+		if (func.isDefinedAt(obj)) func(obj).create(parent, obj.asInstanceOf[U]) else List()
+	}		
+		
 	implicit def str2ItemInfo[T](str: String): ItemInfo[T] = item[T] labelled(_ => str)
+	implicit def liftConstantString[T](str: String): T => String = _ => str
 	
-	object TreeExpansionListener extends TreeAdapter {
+	object TreeListener extends MouseAdapter with TreeListener {
+			override def treeCollapsed(e: TreeEvent): Unit = {}
 			override def treeExpanded(e: TreeEvent): Unit = 
 				for ((dummy, childrenGen) <- e.item(childrenGenerator)) {
 					childrenGenerator.clear(e.item)
 					childrenGen()
 					dummy.dispose
 				}
+			
+			override def mouseDoubleClick(e: MouseEvent): Unit = {
+				val t: Tree = e.widget.asInstanceOf[Tree]
+				t.getSelection flatMap (it => it(onDblClickHandler).map((it, _))) foreach (x => x._2.apply(x._1))
+			}
+	}
+	def register(t: Tree) {
+		t.addTreeListener(TreeListener)
+		t.addMouseListener(TreeListener)
 	}
 }
