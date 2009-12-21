@@ -37,7 +37,8 @@ object IOTools {
 }
 
 object PdfBrowser extends net.virtualvoid.swt.TreeApp[PdfReader] {
-	val reader = new PdfReader("test.pdf")
+	var filename: String = _
+	var reader: PdfReader = _
 	
 	import PdfObject._
 	def typeStr(tpe: Int): String = tpe match {
@@ -55,8 +56,6 @@ object PdfBrowser extends net.virtualvoid.swt.TreeApp[PdfReader] {
 		case INDIRECT => "INDIRECT => "+typeStr(PdfReader.getPdfObject(obj).`type`)
 		case x => typeStr(x)
 	}
-	
-	val startObject: PdfReader = reader
 	
 	import net.virtualvoid.swt.Trees._
 	
@@ -110,8 +109,20 @@ object PdfBrowser extends net.virtualvoid.swt.TreeApp[PdfReader] {
 		}
 	
 	def treeCreator: ItemCreator[PdfReader] = 
-		item[PdfReader].labelled(_.toString)
+		item[PdfReader].labelled(filename)
 		               .|--(_.getCatalog)(dictionary labelled "Root")
 	
-	def main(args: Array[String]) { run }
+    def startObject: PdfReader = reader
+    override def title: String = "PDF Structure Viewer: "+filename
+		               
+	def main(args: Array[String]) {
+		if (args.length != 1){
+			println("Usage: pdfstructure <filename>")
+			exit
+		}			
+		
+		filename = args(0)
+		reader = new PdfReader(filename)
+		run
+	}
 }
