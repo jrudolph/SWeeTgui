@@ -5,8 +5,8 @@ import SWTTools._
 
 import _root_.org.eclipse.swt
 import swt.SWT
-import swt.widgets.{ Tree, TreeItem }
-import swt.events.{ TreeEvent, TreeListener, MouseEvent, MouseAdapter }
+import swt.widgets.{ Tree, TreeItem, Menu, MenuItem }
+import swt.events.{ TreeEvent, TreeListener, MouseEvent, MouseAdapter, SelectionAdapter, SelectionEvent }
 
 object Trees {
 	type ItemParent = Either[Tree, TreeItem]
@@ -17,6 +17,7 @@ object Trees {
 	}
 	val childrenGenerator = ItemStorage[(TreeItem, () => Unit)]("children")
 	val onDblClickHandler = ItemStorage[TreeItem => Unit]("dblClickHandler")
+	val ctxMenu = ItemStorage[Menu]("ctxMenu")
 	
 	def registerGenerator(it: TreeItem)(f: => Unit) {
 		it(childrenGenerator) match {
@@ -53,6 +54,14 @@ object Trees {
 		def |--[U](descender: T => U)(i: => ItemCreator[U]): ItemInfo[T] = sub { obj => it => registerGenerator(it)(i.create(it, descender(obj))) }
 		
 		def dblClick(handler: T => Unit) = sub { obj => it => it(onDblClickHandler) = ((_: TreeItem) => handler(obj)) }
+		def contextMenu(label: T => String)(handler: T => Unit) = sub { obj => it => 
+			val menu = ctxMenu.getOr(it)(new Menu(it.getParent))
+			val item = new MenuItem(menu, SWT.PUSH)
+			item.setText(label(obj))
+			item.addSelectionListener(new SelectionAdapter {
+				override def widgetSelected(s: SelectionEvent) { handler(obj) }
+			})
+		}
 	}
 	def item[T]: ItemInfo[T] = ItemInfo[T] { (parent, obj) =>
 		List(createTreeItem(parent))
@@ -60,7 +69,7 @@ object Trees {
 	def choose[T, U <: T](func: PartialFunction[T,ItemCreator[U]]): ItemInfo[T] = ItemInfo[T] { (parent, obj) =>
 		if (func.isDefinedAt(obj)) func(obj).create(parent, obj.asInstanceOf[U]) else List()
 	}		
-		
+
 	implicit def str2ItemInfo[T](str: String): ItemInfo[T] = item[T] labelled(_ => str)
 	implicit def liftConstantString[T](str: String): T => String = _ => str
 	
@@ -76,6 +85,16 @@ object Trees {
 			override def mouseDoubleClick(e: MouseEvent): Unit = {
 				val t: Tree = e.widget.asInstanceOf[Tree]
 				t.getSelection flatMap (it => it(onDblClickHandler).map((it, _))) foreach (x => x._2.apply(x._1))
+			}
+			override def mouseDown(e: MouseEvent): Unit = {
+				val t: Tree = e.widget.asInstanceOf[Tree]
+				if (e.button == 3) {
+					val selMenu = t.getSelection.headOption flatMap (_(ctxMenu))
+					selMenu foreach { menu =>
+						menu.setLocation(t.getDisplay.map(t, null, e.x, e.y))
+						menu.setVisible(true)
+					}
+				}
 			}
 	}
 	def register(t: Tree) {

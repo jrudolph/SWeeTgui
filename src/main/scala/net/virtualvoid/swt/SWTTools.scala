@@ -7,6 +7,10 @@ object SWTTools {
 	
 	case class ItemStorage[T](label: String){
 		def apply(w: Widget): Option[T] = Option(w.getData(label).asInstanceOf[T])
+		def getOr(w: Widget)(default: => T) = apply(w) match {
+			case Some(x) => x
+			case None => val x = default; update(w, x); x
+		}
 		def update(w: Widget, data: T): Unit = w.setData(label, data)
 		def clear(w: Widget): Unit = w.setData(label, null)
 	}
