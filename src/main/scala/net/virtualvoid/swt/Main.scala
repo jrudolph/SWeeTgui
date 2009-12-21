@@ -59,14 +59,15 @@ object Main {
 		}
 		def labelled(label: T => String): ItemInfo[T] = sub(obj => it => it.setText(label(obj)))
 			
-		def children[U](descender: T => Iterable[U])(f: ItemInfo[U] => ItemInfo[U]): ItemInfo[T] = sub { obj => it =>
+		def |-*[U](descender: T => Iterable[U])(f: ItemInfo[U] => ItemInfo[U]): ItemInfo[T] = sub { obj => it =>
 			registerGenerator(it) {
 				val child = f(item[U])			
 				descender(obj) foreach (x => child.create(it, x))
 			}
 		}
-		def child(i: ItemInfo[T]): ItemInfo[T] = child(x => x)(i)
-		def child[U](descender: T => U)(i: ItemInfo[U]): ItemInfo[T] = sub { obj => it => registerGenerator(it)(i.create(it, descender(obj))) }
+		def |--(i: ItemInfo[T]): ItemInfo[T] = |--(x => x)(i)
+		def |--[U](descender: T => U)(i: ItemInfo[U]): ItemInfo[T] = sub { obj => it => registerGenerator(it)(i.create(it, descender(obj))) }
+		
 	}
 	def item[T]: ItemInfo[T] = ItemInfo[T] { (parent, obj) =>
 		List(createTreeItem(parent))
@@ -91,18 +92,19 @@ object Main {
 				}
 		})
 		
-		lazy val obj: ItemInfo[AnyRef] = item[AnyRef].labelled(_.toString)
-					 //.child("Test")
-					 .children(fieldsOf _){ info =>
-					 	info.labelled(_.field.getName)
-					 		.child(bf => bf.field.get(bf.o))(obj)
-					 }
-					 .children(methodsOf _){ info =>
-					 	info.labelled(_.method.getName)
-					 		.child(bm => bm.method.invoke(bm.o))(obj)
-					 }
+		lazy val objInfo: ItemInfo[AnyRef] = 
+			item[AnyRef].labelled(_.toString)
+						 .|--("Test")
+						 .|-*(fieldsOf _) { info =>
+					 		info.labelled(_.field.getName)
+					 			.|--(bf => bf.field.get(bf.o))(objInfo)
+					 	 }
+					 	 .|-*(methodsOf _) { info =>
+					 	 	info.labelled(_.method.getName)
+					 	 		.|--(bm => bm.method.invoke(bm.o))(objInfo)
+					 	 }
 		
-		obj.create(tree, "Wurst")
+		objInfo.create(tree, "Wurst")
 
 		shell.open
 		val display = shell.getDisplay
