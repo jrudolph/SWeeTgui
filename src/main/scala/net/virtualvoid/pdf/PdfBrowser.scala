@@ -69,13 +69,13 @@ object PdfBrowser extends net.virtualvoid.swt.TreeApp[PdfReader] {
 	
 	def pdfObject: ItemInfo[PdfObject] =
 		choose {
-		case p:PdfString => string
-		case p:PdfIndirectReference => indirect
-		case p:PdfName => name
-		case p:PdfArray => array
-		case p:PdfNumber => number
-		case p:PRStream => stream
-		case p:PdfDictionary => dictionary
+		case PdfString => string
+		case PdfIndirectReference => indirect
+		case PdfName => name
+		case PdfArray => array
+		case PdfNumber => number
+		case PRStream => stream
+		case PdfDictionary => dictionary
 		}
 	
 	def stream: ItemCreator[PRStream] =
