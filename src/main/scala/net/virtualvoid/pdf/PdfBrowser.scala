@@ -81,9 +81,9 @@ object PdfBrowser extends net.virtualvoid.swt.TreeApp[PdfReader] {
 	def stream: ItemCreator[PRStream] =
 		item[PRStream].|-!("Length: "+_.getRawLength)
 					   .|--(dictionary labelled "Dictionary")
-					   .contextMenu("Plaintext")(x => textBox(new String(PdfReader.getStreamBytes(x))))
-					   .contextMenu("Hexdump")(x => textBox(IOTools.hexdumpd(PdfReader.getStreamBytes(x))))
-					   .contextMenu("Hexdump (raw)")(x => textBox(IOTools.hexdumpd(PdfReader.getStreamBytesRaw(x))))
+					   .contextMenu("Plaintext")(stream => textBox(new String(PdfReader.getStreamBytes(stream))))
+					   .contextMenu("Hexdump")(stream => textBox(IOTools.hexdumpd(PdfReader.getStreamBytes(stream))))
+					   .contextMenu("Hexdump (raw)")(stream => textBox(IOTools.hexdumpd(PdfReader.getStreamBytesRaw(stream))))
 	
 	def array: ItemCreator[PdfArray] =
 		item[PdfArray].|-*(arrayEntries(_).zipWithIndex) { info =>
