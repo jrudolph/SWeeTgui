@@ -8,23 +8,23 @@ import swt.layout.FillLayout
 import swt.widgets.{ Shell, Tree }
 
 trait TreeApp[T] {
-	def treeCreator: ItemCreator[T]
-	def startObject: T
-	def title: String = "Generic TreeApp"
-	
-	def run {
-		val shell = new Shell
-		shell.setLayout(new FillLayout)
-		shell.setText(title)
-		val tree = new Tree(shell, SWT.NONE)
-		Trees.register(tree)
+  def treeCreator: ItemCreator[T]
+  def startObject: T
+  def title: String = "Generic TreeApp"
 
-		treeCreator.create(tree, startObject)
+  def run {
+    val shell = new Shell
+    shell.setLayout(new FillLayout)
+    shell.setText(title)
+    val tree = new Tree(shell, SWT.NONE)
+    Trees.register(tree)
 
-		shell.open
-		val display = shell.getDisplay
-		while (!shell.isDisposed) {
-			if (!display.readAndDispatch) display.sleep
-		}
-	}
+    treeCreator.create(tree, startObject)
+
+    shell.open
+    val display = shell.getDisplay
+    while (!shell.isDisposed) {
+      if (!display.readAndDispatch) display.sleep
+    }
+  }
 }
