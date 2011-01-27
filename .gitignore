@@ -5,3 +5,5 @@
 /bin
 /lib_managed
 /.scala_dependencies
+*.iml
+/.idea
