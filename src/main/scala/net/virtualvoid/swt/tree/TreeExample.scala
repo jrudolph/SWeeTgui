@@ -1,9 +1,8 @@
-package net.virtualvoid.swt
+package net.virtualvoid.swt.tree
 
-import Trees2._
 import _root_.net.virtualvoid.scala.Tools._
 
-object Main extends TreeApp[AnyRef] {
+object TreeExample extends TreeApp[AnyRef] {
 	case class BoundField(o: AnyRef, field: java.lang.reflect.Field) {
     def value = field.get(o)
   }
@@ -32,4 +31,3 @@ object Main extends TreeApp[AnyRef] {
           .label(_.method.getName)
       )
 }
-

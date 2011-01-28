@@ -1,10 +1,9 @@
-package net.virtualvoid.swt
+package net.virtualvoid.swt.tree
 
 import _root_.org.eclipse.swt
 import swt.SWT
 import swt.layout.FillLayout
 import swt.widgets.{ Shell, Tree }
-import net.virtualvoid.swt.Trees2.ItemDesc
 
 trait TreeApp[T] {
   def treeCreator: ItemDesc[T]
@@ -16,7 +15,7 @@ trait TreeApp[T] {
     shell.setLayout(new FillLayout)
     shell.setText(title)
     val tree = new Tree(shell, SWT.NONE)
-    Trees.register(tree)
+    TreeUtils.register(tree)
 
     treeCreator.create(startObject, tree)
 
