@@ -17,17 +17,17 @@ object TreeExample extends TreeApp[AnyRef] {
 	def treeCreator: ItemDesc[AnyRef] =
     node[AnyRef]
       .label(_.toString)
-      .child(_.getClass) { //child =>
+      .child(_.getClass) {
         node[Class[_]] decorateWith treeCreator label("Class: "+_)
       }
-      .children(fieldsOf _)(
+      .children(fieldsOf _) {
         node[BoundField]
           .child(_.value)(treeCreator)
           .label(_.field.getName)
-      )
-      .children(methodsOf _)(
+      }
+      .children(methodsOf _) {
         node[BoundMethod0]
           .child(_.value)(treeCreator)
           .label(_.method.getName)
-      )
+      }
 }
