@@ -1,14 +1,13 @@
 package net.virtualvoid.swt
 
-import Trees._
-import _root_.net.virtualvoid.scala.Tools._
 import _root_.org.eclipse.swt
 import swt.SWT
 import swt.layout.FillLayout
 import swt.widgets.{ Shell, Tree }
+import net.virtualvoid.swt.Trees2.ItemDesc
 
 trait TreeApp[T] {
-  def treeCreator: ItemCreator[T]
+  def treeCreator: ItemDesc[T]
   def startObject: T
   def title: String = "Generic TreeApp"
 
@@ -19,7 +18,7 @@ trait TreeApp[T] {
     val tree = new Tree(shell, SWT.NONE)
     Trees.register(tree)
 
-    treeCreator.create(tree, startObject)
+    treeCreator.create(startObject, tree)
 
     shell.open
     val display = shell.getDisplay
@@ -27,4 +26,6 @@ trait TreeApp[T] {
       if (!display.readAndDispatch) display.sleep
     }
   }
+
+  def main(args: Array[String]) = run
 }
