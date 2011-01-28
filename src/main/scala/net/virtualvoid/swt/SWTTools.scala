@@ -1,5 +1,8 @@
 package net.virtualvoid.swt
 
+import org.eclipse.swt.graphics.Image
+import java.io.{FileInputStream, File}
+
 object SWTTools {
 	import _root_.org.eclipse.swt
 	import swt.SWT
@@ -44,4 +47,7 @@ object SWTTools {
 		
 		box.open
 	}
+
+  def icon(f: File): Image =
+    new Image(Display.getCurrent, new FileInputStream(f))
 }

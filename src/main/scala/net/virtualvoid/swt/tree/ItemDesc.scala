@@ -1,8 +1,10 @@
 package net.virtualvoid.swt
 package tree
 
-import org.eclipse.swt.widgets.{Tree, TreeItem}
 import org.eclipse.swt.SWT
+import org.eclipse.swt.graphics.{Device, Image}
+import org.eclipse.swt.widgets.{Display, Tree, TreeItem}
+import java.io.{InputStream, FileInputStream, File}
 
 trait ItemDesc[T] extends ItemDecorator[T] { first =>
   def create(value: T, parent: TreeItem) = apply(value, new TreeItem(parent, SWT.NONE))
@@ -18,12 +20,20 @@ trait ItemDesc[T] extends ItemDecorator[T] { first =>
     decorateWith((value, item) => item.setText(labeller(value)))
   def child[U](f: T => U)(decorator: => ItemDecorator[U]): ItemDesc[T] =
     decorateWith((value, item) =>
-        TreeUtils.registerGenerator(item)(node[U].decorateWith(decorator).create(f(value), item))
+      TreeUtils.registerGenerator(item)(node[U].decorateWith(decorator).create(f(value), item))
     )
   def children[U](f: T => Traversable[U])(decorator: => ItemDecorator[U]): ItemDesc[T] =
     decorateWith((value, item) =>
-        TreeUtils.registerGenerator(item)(f(value).foreach(v => node[U].decorateWith(decorator).create(v, item)))
+      TreeUtils.registerGenerator(item)(f(value).foreach(v => node[U].decorateWith(decorator).create(v, item)))
     )
+  def optional[U](f: T => Option[U])(decorator: => ItemDecorator[U]): ItemDesc[T] =
+    decorateWith((value, item) =>
+      f(value) foreach (decorator(_, item))
+    )
+  def icon(f: T => Image): ItemDesc[T] =
+    decorateWith { (value, item) =>
+      item.setImage(f(value))
+    }
 }
 object ItemDesc {
   def apply[T](f: (T, TreeItem) => Unit): ItemDesc[T] =
